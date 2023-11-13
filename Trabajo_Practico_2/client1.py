@@ -1,14 +1,17 @@
 import http.client
 import argparse
+import socket
 
 '''
 Ejecutar el cliente:
 
-$ python3 client1.py elon.jpg 
-            o
-$ python3 client1.py elon.jpg -p 8080
-            o
-$ python3 client1.py elon.jpg -i 127.0.0.1 -p 8080
+IPV4:
+$ python3 client1.py elon.jpeg -i 127.0.0.1 -p 8080
+
+IPV6:
+$ python3 client1.py elon.jpeg -i ::1 -p 8080
+
+
 
 '''
 
@@ -19,22 +22,28 @@ def send_image(image_path, server_host, server_port):
 
     headers = {'Content-type': 'image/jpeg'}
     conn = http.client.HTTPConnection(server_host, server_port)
-    conn.request("POST", '/', body=image_data, headers=headers)
 
-    response = conn.getresponse()
 
-    if response.status == 200:
+    try:
+        conn.request("POST", '/', body=image_data, headers=headers)
 
-        grayscale_image_data = response.read()
+        response = conn.getresponse()
 
-        with open('nueva_imagen.jpg', 'wb') as new_image_file:
-            new_image_file.write(grayscale_image_data)
+        if response.status == 200:
 
-        print("Imagen en escala de grises guardada como nueva_imagen.jpg")
-    else:
-        print(f"Error en la respuesta del servidor: {response.status} {response.reason}")
+            grayscale_image_data = response.read()
 
-    conn.close()
+            with open('nueva_imagen.jpg', 'wb') as new_image_file:
+                new_image_file.write(grayscale_image_data)
+
+            print("Imagen en escala de grises guardada como nueva_imagen.jpg")
+        else:
+            print(f"Error en la respuesta del servidor: {response.status} {response.reason}")
+    except (http.client.HTTPException, socket.error) as e:
+        print(f"Error al conectar con el servidor: {e}")
+    finally:
+
+        conn.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Cliente para Tp2 - procesa imagenes')

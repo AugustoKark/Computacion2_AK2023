@@ -5,26 +5,20 @@ from PIL import Image
 import multiprocessing
 import queue
 import argparse
+import socket
 
 '''
 Ejecutar el servidor:
 
-$ python3 server1.py 
-            o
-$ python3 server1.py -p 1111
-            o
-$ python3 server1.py -i 127.0.0.1 -p 1111
+IPV4:
+$ python3 server1.py -i 127.0.0.1 -p 8080
+
+IPV6:
+$ python3 server1.py -i ::1 -p 8080
+
 
 '''
 
-# Definir los argumentos de la línea de comandos
-parser = argparse.ArgumentParser(description='Tp2 - procesa imagenes')
-parser.add_argument('-i', '--ip', default='127.0.0.1', help='Dirección de escucha')
-parser.add_argument('-p', '--port', type=int, default=8080, help='Puerto de escucha')
-args = parser.parse_args()
-
-IP = args.ip
-PORT = args.port
 
 class GrayscaleConversionService:
     @staticmethod
@@ -77,9 +71,22 @@ class ConcurrentHandler(http.server.BaseHTTPRequestHandler):
         client_socket.close()
 
 if __name__ == "__main__":
-    socketserver.TCPServer.allow_reuse_address = True
+
+    parser = argparse.ArgumentParser(description='Tp2 - procesa imagenes')
+    parser.add_argument('-i', '--ip', default='::', help='Dirección de escucha')
+    parser.add_argument('-p', '--port', type=int, default=8080, help='Puerto de escucha')
+    args = parser.parse_args()
+
+    IP = args.ip
+    PORT = args.port
+
+    # Crear un socket que admite tanto IPv4 como IPv6
+    server_address = (IP, PORT)
+    socket_family = socket.AF_INET6 if ":" in IP else socket.AF_INET
+
+    socketserver.TCPServer.address_family = socket_family
     my_handler = ConcurrentHandler
-    httpd = socketserver.TCPServer((IP, PORT), my_handler)
+    httpd = socketserver.TCPServer(server_address, my_handler)
 
    
     request_queue = multiprocessing.Queue()
